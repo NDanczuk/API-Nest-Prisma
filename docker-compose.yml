@@ -11,14 +11,4 @@ services:
       - .docker/dbdata:/var/lib/postgresql/data
     environment:
       - POSTGRES_PASSWORD=docker
-      - POSTGRES_DB=devtraining
-
-  dbtest:
-    build: .
-    container_name: apiprisma-test-db
-    restart: always
-    ports:
-      - "5433:5432"
-    environment:
-      - POSTGRES_PASSWORD=docker
       - POSTGRES_DB=apiprisma
