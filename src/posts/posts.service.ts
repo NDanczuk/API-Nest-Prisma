@@ -11,7 +11,7 @@ export class PostsService {
   }
 
   findAll() {
-    return this.repository.findAll;
+    return this.repository.findAll();
   }
 
   findOne(id: number) {
