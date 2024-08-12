@@ -4,7 +4,7 @@ import { CreatePostDto } from '../dto/create-post.dto';
 import { PostEntity } from '../entities/post.entity';
 import { UpdatePostDto } from '../dto/update-post.dto';
 import { Injectable } from '@nestjs/common';
-import { NotFountError } from 'src/common/errors/types/NotFoundError';
+import { NotFoundError } from 'src/common/errors/types/NotFoundError';
 
 @Injectable()
 export class PostsRepository {
@@ -22,7 +22,7 @@ export class PostsRepository {
     });
 
     if (!user) {
-      throw new NotFountError('Author not found');
+      throw new NotFoundError('Author not found');
     }
 
     const data: Prisma.PostCreateInput = {
@@ -68,16 +68,51 @@ export class PostsRepository {
     });
   }
 
-  async update(id: number, updatePostDTO: UpdatePostDto): Promise<PostEntity> {
-    return this.prisma.post.update({
+  async update(id: number, updatePostDto: UpdatePostDto): Promise<PostEntity> {
+    const { authorEmail } = updatePostDto;
+
+    if (!authorEmail) {
+      return this.prisma.post.update({
+        data: updatePostDto,
+        where: { id },
+      });
+    }
+
+    delete updatePostDto.authorEmail;
+
+    const user = await this.prisma.user.findUnique({
       where: {
-        id,
+        email: authorEmail,
       },
-      data: updatePostDTO,
+    });
+
+    if (!user) {
+      throw new NotFoundError('Author not found.');
+    }
+
+    const data: Prisma.PostUpdateInput = {
+      ...updatePostDto,
+      author: {
+        connect: {
+          email: authorEmail,
+        },
+      },
+    };
+
+    return this.prisma.post.update({
+      where: { id },
+      data,
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<PostEntity> {
     return this.prisma.post.delete({
       where: {
         id,
